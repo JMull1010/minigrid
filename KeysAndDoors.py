@@ -11,19 +11,20 @@ State = namedtuple("State", "x y door_states key_states holding_key key_color")
 Action = namedtuple("Action", "dx dy open pickup")
 Observation = namedtuple("Observation", "x y obs_grid door_states key_states holding_key key_color")
 
+
 class KeysAndDoors(TabularPOMDP):
     def __init__(
-        self,
-        coherence=.95,
-        discount_rate=.95,
-        step_cost=-1,
-        target_reward=100,
-        grid=None
+            self,
+            coherence=.95,
+            discount_rate=.95,
+            step_cost=-1,
+            target_reward=100,
+            grid=None
     ):
         """
         Parameters
         ---------
-        :coherence:       
+        :coherence:
         :discount_rate:
         :step_cost:
         :reward:
@@ -38,12 +39,12 @@ class KeysAndDoors(TabularPOMDP):
         """
         if grid is None:
             grid = \
-            """
-            t....
-            ##R##
-            .....
-            ##s.r
-            """
+                """
+                t....
+                ##R##
+                .....
+                ##s.r
+                """
         grid = [list(r.strip()) for r in grid.split('\n') if len(r.strip()) > 0]
         self.grid = grid
         self.loc_features = {}
@@ -75,8 +76,6 @@ class KeysAndDoors(TabularPOMDP):
         self.step_cost = step_cost
         self.target_reward = target_reward
 
-        
-
     def initial_state_dist(self):
         x, y = self.features_loc['s'][0]
         temp_stat = list()
@@ -92,10 +91,11 @@ class KeysAndDoors(TabularPOMDP):
         key_states = [True] * len(self.key_loc)
 
         return DictDistribution({
-            State(x=x, y=y, door_states=initial_door_stat, holding_key=False, key_states=tuple(key_states), key_color=None): 1.0,
+            State(x=x, y=y, door_states=initial_door_stat, holding_key=False, key_states=tuple(key_states),
+                  key_color=None): 1.0,
         })
 
-    #Current Actions: x, y, open door, Pick up key
+    # Current Actions: x, y, open door, Pick up key
     def actions(self, s):
         return (
             Action(0, -1, False, False),
@@ -121,29 +121,27 @@ class KeysAndDoors(TabularPOMDP):
 
         # Don't consider states outside of the grid
         if nx < 0 or nx >= self.width or ny < 0 or ny >= self.height:
-            return DictDistribution({State(x=x, y=y, door_states=tuple(door_states), key_states=tuple(key_states), holding_key=key_state, key_color=held_color): 1.0})
+            return DictDistribution({State(x=x, y=y, door_states=tuple(door_states), key_states=tuple(key_states),
+                                           holding_key=key_state, key_color=held_color): 1.0})
 
         # Check if agent is on an edge
-        if (x-1 >= 0):
-            adjacent.append((x-1, y))
-        if (x+1 < self.width):
-            adjacent.append((x+1, y))
-        if (y-1 >= 0):
-            adjacent.append((x, y-1))
-        if (y+1 < self.height):
-            adjacent.append((x, y+1))
+        if (x - 1 >= 0):
+            adjacent.append((x - 1, y))
+        if (x + 1 < self.width):
+            adjacent.append((x + 1, y))
+        if (y - 1 >= 0):
+            adjacent.append((x, y - 1))
+        if (y + 1 < self.height):
+            adjacent.append((x, y + 1))
 
         # Pick Up Key
         if a.pickup and not key_state:
-            for adj in adjacent:
-                if adj in self.key_loc:
-                    key_index = self.key_loc.index(adj)
-                    if key_states[key_index]:
-                        key_states[key_index] = False
-                        key_state = True
-                        held_color = self.key_colors[key_index]
-                        break
-
+            if (x, y) in self.key_loc:
+                key_index = self.key_loc.index((x, y))
+                if key_states[key_index]:
+                    key_states[key_index] = False
+                    key_state = True
+                    held_color = self.key_colors[key_index]
 
         # Open Door
         if a.open:
@@ -167,11 +165,12 @@ class KeysAndDoors(TabularPOMDP):
                 nx, ny = x, y
 
         return DictDistribution({
-            State(x=nx, y=ny, door_states=tuple(door_states), key_states=tuple(key_states), holding_key=key_state, key_color=held_color): 1.0
+            State(x=nx, y=ny, door_states=tuple(door_states), key_states=tuple(key_states), holding_key=key_state,
+                  key_color=held_color): 1.0
         })
 
     def reward(self, s, a, ns):
-        r=0
+        r = 0
         r += self.step_cost
         if self.loc_features[(ns.x, ns.y)] == 't':
             r += self.target_reward
@@ -180,11 +179,12 @@ class KeysAndDoors(TabularPOMDP):
     def observation_dist(self, a, ns):
         obs_grid = set()
         radius = 3
+
         # Bresenham's line alg. (double check if implemented correctly)
         def line_of_sight(x0, y0, xf, yf):
-            dx = abs(xf-x0)
-            dy = abs(yf-y0)
-            
+            dx = abs(xf - x0)
+            dy = abs(yf - y0)
+
             # Determining Direction
             if x0 < xf:
                 sx = 1
@@ -198,7 +198,6 @@ class KeysAndDoors(TabularPOMDP):
 
             x = x0
             y = y0
-
 
             while True:
                 # Stop if we hit a wall or our target
@@ -215,15 +214,15 @@ class KeysAndDoors(TabularPOMDP):
                 if decisionParam2 < dx:
                     decisionParam += dx
                     y += sy
-            
+
         # Determine which parts of the grid are currently visible
-        for dy in range(-radius, radius+1):
-            for dx in range(-radius, radius +1):
+        for dy in range(-radius, radius + 1):
+            for dx in range(-radius, radius + 1):
                 cx = ns.x + dx
                 cy = ns.y + dy
 
                 if (cx < 0 or cx >= self.width):
-                    continue 
+                    continue
                 if (cy < 0 or cy >= self.height):
                     continue
 
@@ -239,7 +238,8 @@ class KeysAndDoors(TabularPOMDP):
                 obs_door.append(None)
 
         return DictDistribution({
-                Observation(x=ns.x, y=ns.y, obs_grid=tuple(obs_grid), door_states=tuple(obs_door), key_states=ns.key_states, holding_key=ns.holding_key, key_color=ns.key_color): 1.0
+            Observation(x=ns.x, y=ns.y, obs_grid=tuple(obs_grid), door_states=tuple(obs_door), key_states=ns.key_states,
+                        holding_key=ns.holding_key, key_color=ns.key_color): 1.0
         })
 
     def state_string(self, s):
