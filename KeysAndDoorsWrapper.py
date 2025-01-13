@@ -48,5 +48,4 @@ class KeysAndDoorsEnv:
 
     def render(self):
         print(self.env.state_string(self.current_state))
-        print(self.current_obs)
         print(self.last_action)
