@@ -21,6 +21,7 @@ class KeysAndDoorsEnv:
 
         self.current_state = None
         self.current_obs = None
+        self.last_action = None
 
     # resets the environment and returns the first observation
     def reset(self):
@@ -42,11 +43,10 @@ class KeysAndDoorsEnv:
         reward = self.env.reward(self.current_state, action, next_state)
         ending_condition = self.env.is_absorbing(next_state)
         self.current_state = next_state
+        self.last_action = action
         return observation, reward, ending_condition
 
-test = KeysAndDoorsEnv(grid ="""
-                        .t..
-                        ..s.
-                        """)
-print(test.reset())
-print(test.step(-1,0,False,False))
+    def render(self):
+        print(self.env.state_string(self.current_state))
+        print(self.current_obs)
+        print(self.last_action)
